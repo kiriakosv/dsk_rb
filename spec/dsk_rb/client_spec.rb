@@ -87,4 +87,66 @@ RSpec.describe 'DskRb::Client' do
       end
     end
   end
+
+  describe '#get_order_status' do
+    subject { client.get_order_status('abc-123') }
+
+    before do
+      stub_request(:post, 'https://uat.dskbank.bg/payment/rest/getOrderStatus.do').
+        with(
+          body: {
+            'orderId' => 'abc-123',
+            'password' => 'password',
+            'userName' => 'username'
+          },
+          headers: {
+            'Accept' => '*/*',
+            'Accept-Encoding' => 'gzip;q=1.0,deflate;q=0.6,identity;q=0.3',
+            'Content-Type' => 'application/x-www-form-urlencoded',
+            'User-Agent' => 'Faraday v2.12.2'
+          }
+        ).to_return(
+          status: 200,
+          body: {
+            currency: '975',
+            authCode: '3',
+            errorCode: '2',
+            orderStatus: '1',
+            orderNumber: '293933',
+            amount: '100',
+            orderId: '351435f6-d791-74a1-91d7-a4a62eadc91b',
+            pan: '123456******3456'
+          }.to_json
+      )
+    end
+
+    context 'when request is successful' do
+      it 'returns parsed response body' do
+        expect(subject).to eq(
+          'currency' => '975',
+          'authCode' => '3',
+          'errorCode' => '2',
+          'orderStatus' => '1',
+          'orderNumber' => '293933',
+          'amount' => '100',
+          'orderId' => '351435f6-d791-74a1-91d7-a4a62eadc91b',
+          'pan' => '123456******3456'
+        )
+      end
+    end
+
+    context 'when request is unsuccessful' do
+      before do
+        stub_request(:post, 'https://uat.dskbank.bg/payment/rest/getOrderStatus.do').
+          to_return(
+            status: 401,
+            body: 'Internal Server Error'
+        )
+      end
+
+      it 'raises an error' do
+        expect { subject }.to raise_error(Faraday::UnauthorizedError)
+      end
+    end
+  end
 end
