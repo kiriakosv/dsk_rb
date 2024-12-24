@@ -25,6 +25,17 @@ module DskRb
       JSON.parse(response.body)
     end
 
+    def get_order_status(order_id)
+      params = { orderId: order_id }
+
+      response = connection.post('/payment/rest/getOrderStatus.do') do |req|
+        req.headers['Content-Type'] = 'application/x-www-form-urlencoded'
+        req.body = URI.encode_www_form(default_params.merge(params))
+      end
+
+      JSON.parse(response.body)
+    end
+
     private
 
     attr_reader :username, :password, :environment, :base_url
